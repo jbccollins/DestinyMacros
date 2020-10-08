@@ -1,0 +1,224 @@
+// BEGIN BUTTON CONFIG
+define HOME          = 0;      // XB1_XBOX    XB360_XBOX   PS4_PS           PS3_PS
+define SHARE         = 1;      // XB1_VIEW    XB360_BACK   PS4_SHARE        PS3_SELECT
+define OPTIONS       = 2;      // XB1_MENU    XB360_START  PS4_OPTIONS      PS3_START
+define GRENADE       = 3;      // XB1_RB      XB360_RB     PS4_R1           PS3_R1
+define SHOOT         = 4;      // XB1_RT      XB360_RT     PS4_R2           PS3_R2
+define MELEE         = 5;      // XB1_RS      XB360_RS     PS4_R3           PS3_R3
+define INSPECT       = 6;      // XB1_LB      XB360_LB     PS4_L1           PS3_L1
+define ADS           = 7;      // XB1_LT      XB360_LT     PS4_L2           PS3_L2
+define SPRINT        = 8;      // XB1_LS      XB360_LS     PS4_L3           PS3_L3
+define RX_AXIS       = 9;      // XB1_RX      XB360_RX     PS4_RX           PS3_RX
+define RY_AXIS       = 10;     // XB1_RY      XB360_RY     PS4_RY           PS3_RY
+define LX_AXIS       = 11;     // XB1_LX      XB360_LX     PS4_LX           PS3_LX
+define LY_AXIS       = 12;     // XB1_LY      XB360_LY     PS4_LY           PS3_LY
+define DPAD_UP       = 13;     // XB1_UP      XB360_UP     PS4_UP           PS3_UP
+define DPAD_DOWN     = 14;     // XB1_DOWN    XB360_DOWN   PS4_DOWN         PS3_DOWN
+define DPAD_LEFT     = 15;     // XB1_LEFT    XB360_LEFT   PS4_LEFT         PS3_LEFT
+define DPAD_RIGHT    = 16;     // XB1_RIGHT   XB360_RIGHT  PS4_RIGHT        PS3_RIGHT
+define WEAPON_SWAP   = 17;     // XB1_Y       XB360_Y      PS4_TRIANGLE     PS3_TRIANGLE
+define CROUCH        = 18;     // XB1_B       XB360_B      PS4_CIRCLE       PS3_CIRCLE
+define JUMP          = 19;     // XB1_A       XB360_A      PS4_CROSS        PS3_CROSS
+define RELOAD        = 20;     // XB1_X       XB360_X      PS4_SQUARE       PS3_SQUARE
+// END BUTTON CONFIG
+
+ 
+//wandering settings
+define waittime=100; //how long to wait in ms between each direction change
+define STR=100; //how far the stick is pushed by the script
+ 
+//dance odds, higher values = less dancing
+//0=no dancing
+define coldfeet = 200;
+ 
+int direction;
+define UP=0,RIGHT=1,DOWN=2,LEFT=3;
+int dancing=0;
+int rumble1,rumble2;
+int bag;
+ 
+int lx,ly;
+int combo_to_run = 1;
+int look_direction = 0;
+int do_afk = 0;
+main {
+    vm_tctrl(-6);
+    
+     // Hold dpad left and other buttons to activate shortcuts
+    if (get_val(DPAD_LEFT)) {
+        // dpad left + left trigger = disable the script
+        if(event_press(7)) {
+            Exit();
+            combo_run(reset);
+        }
+        // dpad left + A = do afk
+        if (get_val(19)) {
+            set_val(19, 0);
+            do_afk = 1;
+        }
+    }
+    
+    if (do_afk) {
+        afk();
+    }
+}
+
+combo grenade_and_super {
+    set_val(INSPECT,100);
+    set_val(GRENADE,100);
+    wait(100);
+    set_val(INSPECT,0);
+    set_val(GRENADE,0);
+    wait(1000);
+    set_val(GRENADE,100);
+    wait(100);
+    set_val(GRENADE,0);
+    wait(500);
+}
+
+combo fire{
+    set_val(SHOOT,100);
+    wait(irand(0,2000));
+    set_val(SHOOT,0);
+    wait(irand(0,2000));
+}
+combo ads{    
+    set_val(ADS,100);
+    wait(irand(0,1000));
+    set_val(ADS,0);
+    wait(irand(0,1000));
+}
+combo melee{    
+    set_val(MELEE,100);
+    wait(irand(0,100));
+}
+combo grenade{
+    set_val(GRENADE,100);
+    wait(100);
+}
+combo dance{
+    set_val(DPAD_RIGHT,100);
+    wait(irand(500,3000));
+    dancing=0;
+}
+combo teabag{
+    set_val(CROUCH,100);
+    wait(100):
+    set_val(CROUCH,0);
+    wait(100);
+    bag=bag-1;
+}
+combo respawn{
+    wait(4000);
+    wait(2000);
+    set_val(RELOAD,100);
+    wait(100);
+    set_val(RELOAD,0);
+    wait(100);
+    //output_reconnection(); //reset controller
+}
+combo super{
+    set_val(GRENADE,100);
+    set_val(MELEE,100);
+    wait(500);
+}
+ 
+combo wander{
+    if(direction<=UP){set_val(LX_AXIS,0);set_val(LY_AXIS,-STR);}
+    if(direction==DOWN){set_val(LX_AXIS,0);set_val(LY_AXIS,STR/2);}
+    if(direction==LEFT){set_val(LX_AXIS,-STR);set_val(LY_AXIS,0);}
+    if(direction==RIGHT){set_val(LX_AXIS,STR);set_val(LY_AXIS,0);}
+    set_val(RY_AXIS,100);
+    wait(irand(500,4000));
+    direction=irand(-4,3);
+}
+combo look{
+    set_val(RY_AXIS,ly);
+    set_val(RX_AXIS,lx);
+    wait(irand(400,1000));
+    lx=irand(-100,100);
+    look_direction = irand(-1,1);
+    lx = 100 * look_direction
+    //ly=irand(-20,20);
+}
+
+combo reset {
+    set_val(RY_AXIS,0);
+    set_val(RX_AXIS,0);
+}
+
+function afk () {
+    rumble1=get_rumble(RUMBLE_A); //read rumble values
+    rumble2=get_rumble(RUMBLE_B);
+    //block rumble from physically shaking
+    set_rumble(RUMBLE_A,0);
+    set_rumble(RUMBLE_B,0);
+    
+    //DETECT RUMBLE, being attacked -respond with grenade/super
+    if(/*!combo_running(fire) && !combo_running(melee) &&*/ !combo_running(grenade_and_super) && (rumble1+rumble2)>50){
+        combo_stop(dance)
+        combo_stop(wander)
+        combo_stop(ads)
+        combo_stop(look)
+        /*
+        combo_stop(fire)
+        combo_stop(melee)
+        */
+        combo_run(grenade_and_super)
+    }
+
+    if (!combo_running(dance) && 
+        !combo_running(wander) && 
+        !combo_running(ads) && 
+        !combo_running(look) && 
+        !combo_running(fire) && 
+        !combo_running(melee) && 
+        !combo_running(grenade_and_super)) {
+        combo_to_run = irand(1, 12)
+        if (combo_to_run == 1) {
+            combo_run(dance)
+        }
+        if (combo_to_run == 2) {
+            combo_run(ads)
+        }
+        if (combo_to_run == 3) {
+            combo_run(look)
+        }
+        if (combo_to_run >= 4) {
+            combo_run(wander)
+        }
+        /*
+        if (combo_to_run == 5) {
+            combo_run(fire)
+        }
+        if (combo_to_run == 6) {
+            combo_run(melee)
+        }
+        */
+    }
+}
+
+function Abort ()
+{
+    if(combo_running(grenade_and_super)) {
+        combo_stop(grenade_and_super);
+    }
+    if(combo_running(look)) {
+        combo_stop(look);
+    }
+    if(combo_running(wander)) {
+        combo_stop(wander);
+    }
+    if(combo_running(dance)) {
+        combo_stop(dance);
+    }
+    if(combo_running(ads)) {
+        combo_stop(ads);
+    }
+}
+
+function Exit ()
+{
+    do_afk = 0;
+    Abort();
+}
