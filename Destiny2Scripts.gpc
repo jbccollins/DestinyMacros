@@ -1,0 +1,177 @@
+int ON = 100;
+int OFF = 0;
+
+/*
+This assumes the "Green Thumb" button layout. You will need to change
+definitions below to support other button layouts. You may also need to change
+the way super activation happens. On the "Green Thumb" layout pressing "LB" and 
+"RB" at the same time activates a super. On other layouts it just requires one
+button press. Search this file for the phrase "**SUPER" for all instances
+where you would need to change this.
+*/
+// BEGIN BUTTON CONFIG
+define HOME          = 0;      // XB1_XBOX    XB360_XBOX   PS4_PS           PS3_PS
+define SHARE         = 1;      // XB1_VIEW    XB360_BACK   PS4_SHARE        PS3_SELECT
+define OPTIONS       = 2;      // XB1_MENU    XB360_START  PS4_OPTIONS      PS3_START
+define GRENADE       = 3;      // XB1_RB      XB360_RB     PS4_R1           PS3_R1
+define SHOOT         = 4;      // XB1_RT      XB360_RT     PS4_R2           PS3_R2
+define MELEE         = 5;      // XB1_RS      XB360_RS     PS4_R3           PS3_R3
+define INSPECT       = 6;      // XB1_LB      XB360_LB     PS4_L1           PS3_L1
+define ADS           = 7;      // XB1_LT      XB360_LT     PS4_L2           PS3_L2
+define SPRINT        = 8;      // XB1_LS      XB360_LS     PS4_L3           PS3_L3
+define RX_AXIS       = 9;      // XB1_RX      XB360_RX     PS4_RX           PS3_RX
+define RY_AXIS       = 10;     // XB1_RY      XB360_RY     PS4_RY           PS3_RY
+define LX_AXIS       = 11;     // XB1_LX      XB360_LX     PS4_LX           PS3_LX
+define LY_AXIS       = 12;     // XB1_LY      XB360_LY     PS4_LY           PS3_LY
+define DPAD_UP       = 13;     // XB1_UP      XB360_UP     PS4_UP           PS3_UP
+define DPAD_DOWN     = 14;     // XB1_DOWN    XB360_DOWN   PS4_DOWN         PS3_DOWN
+define DPAD_LEFT     = 15;     // XB1_LEFT    XB360_LEFT   PS4_LEFT         PS3_LEFT
+define DPAD_RIGHT    = 16;     // XB1_RIGHT   XB360_RIGHT  PS4_RIGHT        PS3_RIGHT
+define WEAPON_SWAP   = 17;     // XB1_Y       XB360_Y      PS4_TRIANGLE     PS3_TRIANGLE
+define CROUCH        = 18;     // XB1_B       XB360_B      PS4_CIRCLE       PS3_CIRCLE
+define JUMP          = 19;     // XB1_A       XB360_A      PS4_CROSS        PS3_CROSS
+define RELOAD        = 20;     // XB1_X       XB360_X      PS4_SQUARE       PS3_SQUARE
+// END BUTTON CONFIG
+
+/*  COMBO Definitions
+    1 = Slug Hot Swap
+*/
+int COMBO_TO_RUN = 0;
+
+int execute;
+
+int slug_count = 0;
+
+main {
+
+    // Tells the Titan One that we want to run a combo
+    // In the "Green Thumb" button configuration this is a useless button
+    if (event_press (INSPECT)) {
+        combo_run(Begin);
+    }
+    // Abort 
+    if (event_press (OPTIONS)) {
+        Abort();
+    }
+    
+    // Cancel looping on any of these events
+    if (event_press(MELEE) || event_press(GRENADE) || event_press(WEAPON_SWAP) || event_press(SPRINT)) {
+        Abort();
+    }
+    
+    // Cancel on super, otherwise disable the inspect button if we are running a combo
+    // **SUPER
+    if (get_val(INSPECT) && get_val(GRENADE)) {
+        Abort();
+    } else if (get_val(INSPECT) && COMBO_TO_RUN != 0) {
+        // Prevent the combo trigger button from propogating through to the game
+        // so as to not interfere with a combo.
+        set_val(INSPECT, OFF);
+    }
+    
+    // Hold dpad left and other buttons to activate shortcuts
+    if (get_val(DPAD_LEFT)) {
+        // dpad left + left trigger = disable the script
+        if(event_press(7)) {
+            Exit();
+        }
+        // dpad left + A = Siege Engine Part Glitch
+        if (get_val(19)) {
+            set_val(19, OFF);
+            COMBO_TO_RUN = 1;'
+        }
+    }
+    
+    if(execute) {
+        if(COMBO_TO_RUN == 1) {
+            combo_run(ShotgunHotSwapFirst);
+        }
+        if(COMBO_TO_RUN == 2) {
+            combo_run(ShotgunHotSwap);
+        }
+        clear_bit(execute, 1);
+    }
+}
+
+combo ShotgunHotSwapFirst {
+    set_val(SHOOT, ON);
+    wait(40);
+    set_val(SHOOT, OFF);
+    wait(20);
+    set_val(WEAPON_SWAP, ON);
+    wait(35);
+    set_val(WEAPON_SWAP, OFF);
+    wait(20);
+    set_val(SPRINT, ON);
+    set_val(LY_AXIS, -99);
+    wait(80);
+    set_val(LY_AXIS, 0);
+    set_val(SPRINT, OFF);
+    wait(300);
+    set_val(SHOOT, ON);
+    wait(200);
+    set_val(SHOOT, OFF);
+    slug_count = slug_count + 1;
+    if (COMBO_TO_RUN == 1) {
+        COMBO_TO_RUN = 2;
+        set_bit(execute, 1);
+    }
+    
+}
+
+combo ShotgunHotSwap
+{
+    set_val(WEAPON_SWAP, ON);
+    wait(35);
+    set_val(WEAPON_SWAP, OFF);
+    wait(20);
+    set_val(SPRINT, ON);
+    set_val(LY_AXIS, -99);
+    wait(80);
+    set_val(LY_AXIS, 0);
+    set_val(SPRINT, OFF);
+    wait(20);
+    set_val(SHOOT, ON);
+    wait(250);
+    set_val(SHOOT, OFF);
+    wait(100);
+    slug_count = slug_count + 1;
+    if (slug_count > 13) {
+        Abort();
+    }
+    if (COMBO_TO_RUN == 2) {
+        set_bit(execute, 1);
+    }
+}
+
+
+// Wait 100 to ensure that if we are supering we don't trigger a combo
+combo Begin {
+    wait(150);
+    set_bit(execute, 1);
+}
+
+function Abort ()
+{
+    if(combo_running(Begin)) {
+        combo_stop(Begin);
+    }
+    if(combo_running(ShotgunHotSwapFirst)) {
+        combo_stop(ShotgunHotSwapFirst);
+    }
+    if(combo_running(ShotgunHotSwap)) {
+        combo_stop(ShotgunHotSwap);
+    }
+    // Reset shotgun spam
+    if(COMBO_TO_RUN == 1 || COMBO_TO_RUN == 2) {
+        COMBO_TO_RUN = 1;
+    }
+    clear_bit(execute, 1);
+    slug_count = 0;
+}
+
+function Exit ()
+{
+    COMBO_TO_RUN = 0;
+    Abort();
+}
