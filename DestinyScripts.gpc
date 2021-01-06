@@ -1,23 +1,38 @@
-int ON = 100;
-int OFF = 0;
+/*
+    This script works in two parts.
+    First assigning a macro that can be run by clicking the inspect button.
+    Second by actually clicking the inspect button and running the macro.
+    
+    To assign a macro to the inspect button hold down the left dpad button and
+    then press another button. The available macro assignments are as follows:
+    
+    1: dpad left + A = Siege Engine Part Glitch (have suncharge equipped)
+    2: dpad left + B = Titan Sword Fly (requires twilight garrison)
+    3: dpad left + X = Basic Sword Fly (class agnostic)
+    4: dpad left + Y = Final Round Spam (assumes Found Verdict and Shotgun Reloader gauntlets)
+    5: dpad left + Right Stick Click = Instant Shoulder Charge (must be moving forward to activate)
+    6: dpad left + LT = Unassign the inspect button and disable the script
+    
+    Macros 2, 3, and 4 will continue to loop until they are interrupted.
+    You can interrupt pressing any of the following buttons: ADS, MELEE, GRENADE, WEAPON_SWAP, SPRINT
+    
+    Pressing the xbox "menu" button will cancel any running script to prevent anything from happening
+    in your inventory.
+    
+    This assumes the "Green Thumb" button layout. You will need to change
+    definitions below to support other button layouts. You may also need to change
+    the way super activation happens. On the "Green Thumb" layout pressing "LB" and 
+    "RB" at the same time activates a super. On other layouts it just requires one
+    button press. Search this file for the phrase "**SUPER" for all instances
+    where you would need to change this.
+    
+    Keep in mind that controller inputs in Destiny are very tightly tied to framerate.
+    If you are dropping frames, which is common when looking at siva nanite clouds
+    or sunspots, then it is likely that some of the macros will have their timings
+    messed up.
+    
+*/
 
-/*
-    1 = Siege Engine Part Glitch
-    2 = Titan Sword Fly
-    3 = Basic Sword Fly
-    4 = Final Round First
-    5 = Final Round Spam
-    7 = Shoulder Charge Glitch
-*/
-int COMBO_TO_RUN = 0;
-/*
-This assumes the "Green Thumb" button layout. You will need to change
-definitions below to support other button layouts. You may also need to change
-the way super activation happens. On the "Green Thumb" layout pressing "LB" and 
-"RB" at the same time activates a super. On other layouts it just requires one
-button press. Search this file for the phrase "**SUPER" for all instances
-where you would need to change this.
-*/
 // BEGIN BUTTON CONFIG
 define HOME          = 0;      // XB1_XBOX    XB360_XBOX   PS4_PS           PS3_PS
 define SHARE         = 1;      // XB1_VIEW    XB360_BACK   PS4_SHARE        PS3_SELECT
@@ -42,10 +57,15 @@ define JUMP          = 19;     // XB1_A       XB360_A      PS4_CROSS        PS3_
 define RELOAD        = 20;     // XB1_X       XB360_X      PS4_SQUARE       PS3_SQUARE
 // END BUTTON CONFIG
 
-int hammerOnDelay;
-int hammerOffDelay;
+int ON = 100;
+int OFF = 0;
 
-int execute;
+int COMBO_TO_RUN = 0;
+
+int HAMMER_ON_DELAY;
+int HAMMER_OFF_DELAY;
+
+int EXECUTE;
 
 main {
 
@@ -100,19 +120,24 @@ main {
             set_val(17, OFF);
             COMBO_TO_RUN = 4;
         }
-        // dpad left + RT = Taunt Breach
+        // dpad left + RT = Taunt Breach (DISABLED)
         if (get_val(4)) {
             set_val(4, OFF);
             COMBO_TO_RUN = 6;
         }
-        // dpad left + Melee = Instant Shoulder Charge
+        // dpad left + Right Stick Click = Instant Shoulder Charge
         if (get_val(5)) {
             set_val(5, OFF);
             COMBO_TO_RUN = 7;
         }
+        // dpad left + Home = Titan Skate (NOT WORKING WELL)
+        if (get_val(0)) {
+            set_val(0, OFF);
+            COMBO_TO_RUN = 20;
+        }
     }
     
-    if(execute) {
+    if(EXECUTE) {
         if(COMBO_TO_RUN == 1) {
             combo_run(PartGlitch);
         }
@@ -132,12 +157,15 @@ main {
         if (COMBO_TO_RUN == 7 && get_val(LY_AXIS) < -60) {
             combo_run(ShoulderCharge);
         }
+        if (COMBO_TO_RUN == 20) {
+            combo_run(Skate);
+        }
         /*
         if (COMBO_TO_RUN == 6){
             combo_run(Taunt);
         }
         */
-        clear_bit(execute, 1);
+        clear_bit(EXECUTE, 1);
     }
 }
 
@@ -149,10 +177,10 @@ combo FinalRoundFirst {
     wait(50);
     set_val(RELOAD, OFF);
     set_val(SHOOT, ON);
-    //wait(700); // Stolen Will + Flared Magwell
+    //wait(700); // Stolen Will with Flared Magwell
     //wait(1100); // Matador with Spray and Play + Quickdraw
-    //wait(800); // Found Verdict
-    wait(700) // Strongbow - D
+    wait(800); // Found Verdict
+    //wait(700) // Strongbow - D with Oiled Frame
     set_val(RELOAD, ON);
     set_val(SHOOT, ON)
     wait(50);
@@ -161,9 +189,19 @@ combo FinalRoundFirst {
     
     if (COMBO_TO_RUN == 4) {
         COMBO_TO_RUN = 5;
-        set_bit(execute, 1);
+        set_bit(EXECUTE, 1);
     }
     
+}
+
+combo Skate {
+    set_val(JUMP, ON);
+    wait(10);
+    set_val(JUMP, OFF);
+    if (COMBO_TO_RUN == 20) {
+        set_bit(EXECUTE, 1);
+    }
+
 }
 
 // Full Auto Shotgun Final Round Spam
@@ -172,15 +210,15 @@ combo FinalRoundSpam
     set_val(SHOOT, ON);
     //wait(900); // Matador
     //wait(675) // Stolen Will + Flared Magwell
-    wait(675) // Strongbow - D
-    //wait(745); // Found Verdict
+    //wait(675) // Strongbow - D
+    wait(745); // Found Verdict
     set_val(RELOAD, ON);
     set_val(SHOOT, ON)
     wait(50);
     set_val(RELOAD, OFF);
     set_val(SHOOT, ON)
     if (COMBO_TO_RUN == 5) {
-        set_bit(execute, 1);
+        set_bit(EXECUTE, 1);
     }
 }
 
@@ -197,7 +235,7 @@ combo FinalRoundSpam
     set_val(RELOAD, OFF);
     set_val(SHOOT, ON)
     if (COMBO_TO_RUN == 5) {
-        set_bit(execute, 1);
+        set_bit(EXECUTE, 1);
     }
 }
 */
@@ -215,10 +253,15 @@ combo Taunt {
     set_val(XB1_LX, 0);
 }
 
-// Wait 100 to ensure that if we are supering we don't trigger a combo
+// Wait 150 to ensure that if we are supering we don't trigger a combo. This
+// matters for the Green Thumb configuration since it's LB + RB to trigger super
+// and LB is the inspect button which is used to start macros. If you are using
+// some other button layout where the inspect button is never used alongside
+// any other button then you can just remove the "wait" statement in here.
+//**SUPER
 combo Begin {
     wait(150);
-    set_bit(execute, 1);
+    set_bit(EXECUTE, 1);
 }
 
 // Execute this combo right after a jump
@@ -229,7 +272,7 @@ combo FlyBasic
     set_val(SHOOT, ON);
     wait(525);
     if (COMBO_TO_RUN == 3) {
-        set_bit(execute, 1);
+        set_bit(EXECUTE, 1);
     }
 }
 
@@ -250,8 +293,7 @@ combo ShoulderCharge{
     set_val(MELEE,100);
     wait(50);
     set_val(MELEE,0);
- 
-    //UNcrouch
+    //UN-CROUCH
     set_val(CROUCH,100);
     wait(50);
     set_val(CROUCH,0);
@@ -278,14 +320,14 @@ combo FlyTitan
     set_val(JUMP, ON);
     wait(940);
     if (COMBO_TO_RUN == 2) {
-        set_bit(execute, 1);
+        set_bit(EXECUTE, 1);
     }
 }
 
 combo PartGlitch
 {
-    hammerOnDelay = 1500;
-    hammerOffDelay = 150;
+    HAMMER_ON_DELAY = 1500;
+    HAMMER_OFF_DELAY = 150;
     wait(100);
     // **SUPER
     set_val(INSPECT, ON);
@@ -293,22 +335,22 @@ combo PartGlitch
     wait(100);
     set_val(INSPECT, OFF);
     set_val(GRENADE, OFF);
-    wait(hammerOnDelay);
+    wait(HAMMER_ON_DELAY);
     // BEGIN THROW FOUR HAMMERS
     set_val(SHOOT, ON);
-    wait(hammerOffDelay);
+    wait(HAMMER_OFF_DELAY);
     set_val(SHOOT, OFF);
-    wait(hammerOnDelay);
+    wait(HAMMER_ON_DELAY);
     set_val(SHOOT, ON);
-    wait(hammerOffDelay);
+    wait(HAMMER_OFF_DELAY);
     set_val(SHOOT, OFF);
-    wait(hammerOnDelay);
+    wait(HAMMER_ON_DELAY);
     set_val(SHOOT, ON);
-    wait(hammerOffDelay);
+    wait(HAMMER_OFF_DELAY);
     set_val(SHOOT, OFF);
-    wait(hammerOnDelay);
+    wait(HAMMER_ON_DELAY);
     set_val(SHOOT, ON);
-    wait(hammerOffDelay);
+    wait(HAMMER_OFF_DELAY);
     set_val(SHOOT, OFF);
     // END THROW FOUR HAMMERS
     wait(2000);
@@ -318,7 +360,7 @@ combo PartGlitch
     // wait() clears the RELOAD set so we reset it to on here
     set_val(RELOAD, ON)
     set_val(SHOOT, ON);
-    wait(hammerOffDelay);
+    wait(HAMMER_OFF_DELAY);
     set_val(RELOAD, ON);
     set_val(SHOOT, OFF);
     wait(1000);
@@ -346,7 +388,7 @@ function Abort ()
     if(COMBO_TO_RUN == 4 || COMBO_TO_RUN == 5) {
         COMBO_TO_RUN = 4;
     }
-    clear_bit(execute, 1);
+    clear_bit(EXECUTE, 1);
 }
 
 function Exit ()
